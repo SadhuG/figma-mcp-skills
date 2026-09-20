@@ -1,0 +1,1847 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Repository Structure · plan</title>
+    <meta name="description" content="Stand up the figma-mcp-skills repository: a short always-on CLAUDE.md, natively discovered skills, a shared specs/ folder, templates, a scratch dump/, and a zero-dependency plan-to-HTML generator ported from the Figma Design Relay repo." />
+    <link rel="stylesheet" href="../assets/doc.css" />
+  </head>
+  <body data-doc="repo-structure">
+    <a class="skip" href="#main">Skip to the plan</a>
+
+    <div class="shell">
+      <header class="masthead">
+        <p class="eyebrow">Implementation plan · 2026-09-20</p>
+        <h1>Repository Structure</h1>
+        <p class="standfirst">Stand up the figma-mcp-skills repository: a short always-on <code>CLAUDE.md</code>, natively discovered skills, a shared <code>specs/</code> folder, templates, a scratch <code>dump/</code>, and a zero-dependency plan-to-HTML generator ported from the Figma Design Relay repo.</p>
+
+        <dl class="masthead__meta">
+          <div><b>Spec</b> — <a href="../specs/2026-09-17-repo-structure-design.md">2026-09-17-repo-structure-design</a></div>
+          <div><b>Tasks</b> — 9</div>
+          <div><b>Steps</b> — 41</div>
+          <div><b>Progress</b> — saved in this browser</div>
+        </dl>
+      </header>
+
+      <blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+      </blockquote>
+
+      <section class="brief">
+        <h2 id="brief" data-spy>The shape of it</h2>
+        <p><strong>Architecture.</strong> Everything is markdown except the generator, which is two ES modules under <code>docs/_src/</code> — <code>plan.mjs</code> (pure parse and render functions) and <code>build-plans.mjs</code> (discovery, index, <code>--check</code>) — tested with Node's built-in <code>node --test</code>. A <code>scripts/check.mjs</code> script makes the spec's verification section repeatable: skill frontmatter, README catalogue against disk, and stale plan HTML.</p>
+        <p><strong>Tech stack.</strong> Markdown, Node 24 (<code>node:test</code>, <code>node:fs</code>, <code>node:path</code> only — no <code>package.json</code>, no dependencies), Claude Code native skills (<code>.claude/skills/&lt;name&gt;/SKILL.md</code>).</p>
+
+        <h3>Global constraints</h3>
+        <p>Every task's requirements implicitly include these.</p>
+<ul class="plain">
+  <li>No <code>package.json</code>, no <code>node_modules</code>, no Prettier. The only runtime is <code>node</code> (v24 on this machine). Tests run with <code>node --test "docs/_src/*.test.mjs"</code>.</li>
+  <li>Every file is LF. <code>.gitattributes</code> (<code>* text=auto eol=lf</code>) is already committed; do not add CRLF.</li>
+  <li>Nothing with a <code>SKILL.md</code> may live under <code>.claude/skills/</code> unless it is a real skill — the harness auto-discovers that folder. Templates live in <code>templates/</code>.</li>
+  <li><code>.claude/CLAUDE.md</code> stays under 60 lines and contains no manual skill index.</li>
+  <li>Skills are procedure (steps), specs are facts (no steps). Apply the separation rule from the spec while writing; do not ask.</li>
+  <li>Plan markdown is the source of truth; HTML under <code>docs/</code> is generated. Never hand-edit a generated <code>.html</code>.</li>
+  <li>The two Figma MCP servers (<code>figma-bridge</code>, <code>figma-design-relay</code>) are chosen per session by the user. Nothing in this repo may assume one is active, and nothing may propose changing <code>~/.claude.json</code>.</li>
+  <li>Commit messages: <code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>chore:</code>; end each with <code>Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;</code>.</li>
+  <li>The relay repo at <code>C:/Users/sadhu/code/figma-design-relay</code> is read-only reference material for the port. Do not modify it.</li>
+</ul>
+      </section>
+
+      <div class="layout">
+        <nav class="rail" aria-label="Tasks">
+          <p class="rail__title">Tasks</p>
+          <ol>
+            <li>
+              <a href="#task-1"
+                ><span>Ignore rules and the scratch folder <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-2"
+                ><span>Plan parser and renderer as a library <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-3"
+                ><span>Build CLI with discovery, index, and <code>--check</code> <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-4"
+                ><span>Page assets and the first rendered plan <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-5"
+                ><span>Seed spec — the Figma tool surface <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-6"
+                ><span>Templates <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-7"
+                ><span>The <code>authoring</code> skill <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-8"
+                ><span><code>CLAUDE.md</code> <b class="rail__done"></b></span
+              ></a>
+            </li>
+            <li>
+              <a href="#task-9"
+                ><span>Repo check script and README catalogue <b class="rail__done"></b></span
+              ></a>
+            </li>
+          </ol>
+        </nav>
+
+        <main id="main">
+          <article class="task" id="task-1" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 01</span>
+              <h2>Ignore rules and the scratch folder</h2>
+              
+            </div>
+<p><code>dump/</code> must exist in the repo but never contribute files to it, and the root <code>.gitignore</code> must keep OS and editor noise out. This task proves both with <code>git status</code>.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>.gitignore</code></li>
+                <li><span class="verb">Create</span><code>dump/.gitignore</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — nothing.<br />
+                <strong>Produces</strong> — <code>dump/</code> as the only sanctioned scratch location. Task 8's <code>CLAUDE.md</code> and Task 7's <code>authoring</code> skill refer to it by that path.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret1s1" />
+                  <label class="step__label" for="repostructuret1s1">Write the root <code>.gitignore</code></label>
+                </div>
+                <div class="step__body">
+<pre><code># OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
+.idea/
+
+# Node, should anything ever install it here
+node_modules/
+
+# Claude Code local-only settings
+.claude/settings.local.json</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret1s2" />
+                  <label class="step__label" for="repostructuret1s2">Write <code>dump/.gitignore</code></label>
+                </div>
+                <div class="step__body">
+<pre><code># Scratch space. Everything here is throwaway; only this file is tracked.
+*
+!.gitignore</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret1s3" />
+                  <label class="step__label" for="repostructuret1s3">Verify <code>dump/</code> swallows files</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>echo scratch &gt; dump/probe.txt; git status --porcelain</code><br />
+  <b>Expect</b> <span class="pass">prints</span> exactly two lines, <code>?? .gitignore</code> and <code>?? dump/</code> — no <code>dump/probe.txt</code>. Then <code>git add -n dump/</code> lists only <code>dump/.gitignore</code>.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret1s4" />
+                  <label class="step__label" for="repostructuret1s4">Clean up and commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>rm dump/probe.txt
+git add .gitignore dump/.gitignore
+git commit -m "chore: ignore rules and scratch folder
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-2" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 02</span>
+              <h2>Plan parser and renderer as a library</h2>
+              
+            </div>
+<p>Port the relay's generator into a pure module with no registry and no relay branding, and make the parser fence-aware so a plan that embeds markdown files (like this one) does not get cut in half by a <code>## Done when</code> inside a code block.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>docs/_src/plan.mjs</code> (from <code>C:/Users/sadhu/code/figma-design-relay/docs/superpowers/_src/build-plans.mjs</code>)</li>
+                <li><span class="verb">Create</span><code>docs/_src/plan.test.mjs</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — nothing.<br />
+                <strong>Produces</strong> — <code>parsePlan(md: string): Plan</code>, <code>deriveConfig(plan: Plan, filename: string): Config</code>, <code>renderHtml(plan: Plan, cfg: Config): string</code>, <code>renderIndex(entries: {plan: Plan, cfg: Config}[]): string</code>. <code>Plan</code> is the relay's shape (<code>title</code>, <code>meta</code>, <code>blockquote</code>, <code>constraints</code>, <code>tasks[]</code>, <code>doneWhen</code>) with <code>meta.Phase</code> added. <code>Config</code> is <code>{ md, docKey, slug, date, phase, eyebrow, description, spec: {href, label} | null }</code>. Task 3 imports all four from <code>./plan.mjs</code>.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s1" />
+                  <label class="step__label" for="repostructuret2s1">Write the failing tests</label>
+                </div>
+                <div class="step__body">
+<p>Create <code>docs/_src/plan.test.mjs</code>:</p>
+<pre><code>import { test } from "node:test";
+import assert from "node:assert/strict";
+import { parsePlan, deriveConfig, renderHtml, renderIndex } from "./plan.mjs";
+
+const FIXTURE = `# Widget Implementation Plan
+
+&gt; **For agentic workers:** read this.
+
+**Goal:** Build the widget.
+
+**Architecture:** One module.
+
+**Tech Stack:** Node.
+
+**Spec:** \`docs/specs/2026-01-01-widget-design.md\` — the widget spec.
+
+## Global Constraints
+
+- Keep it small.
+
+---
+
+### Task 1: Parse input [R1, R2]
+
+Intro paragraph.
+
+**Files:**
+
+- Create: \`src/parse.mjs\`
+
+**Interfaces:**
+
+- Consumes: nothing.
+- Produces: \`parse(s)\`.
+
+- [ ] **Step 1: Write the failing test**
+
+\`\`\`js
+assert.equal(parse("a"), "a");
+\`\`\`
+
+- [x] **Step 2: Run it**
+
+Run: \`node --test\`
+Expected: FAIL with "parse is not defined"
+
+### Task 2: Render output
+
+**Files:**
+
+- Create: \`src/render.mjs\`
+
+**Interfaces:**
+
+- Consumes: \`parse(s)\`.
+- Produces: \`render(p)\`.
+
+- [ ] **Step 1: Embed a file**
+
+\`\`\`markdown
+### Task 99: not a real task
+## Done when
+- [ ] **Step 7: not a real step**
+\`\`\`
+
+- [ ] **Step 2: Commit**
+
+Run: \`git commit\`
+Expected: PASS
+
+## Done when
+
+- Both tests pass.
+`;
+
+test("parsePlan reads title, meta, constraints, tasks, steps, and done-when", () =&gt; {
+  const plan = parsePlan(FIXTURE);
+  assert.equal(plan.title, "Widget");
+  assert.equal(plan.meta.Goal, "Build the widget.");
+  assert.equal(plan.meta.Spec, "`docs/specs/2026-01-01-widget-design.md` — the widget spec.");
+  assert.deepEqual(plan.constraints, ["- Keep it small."]);
+  assert.equal(plan.tasks.length, 2);
+  assert.equal(plan.tasks[0].title, "Parse input");
+  assert.deepEqual(plan.tasks[0].chips, ["R1", "R2"]);
+  assert.deepEqual(plan.tasks[0].files, ["Create: `src/parse.mjs`"]);
+  assert.equal(plan.tasks[0].steps.length, 2);
+  assert.equal(plan.tasks[0].steps[1].done, true);
+  assert.deepEqual(plan.doneWhen, ["- Both tests pass."]);
+});
+
+test("parsePlan ignores structure inside fenced code", () =&gt; {
+  const plan = parsePlan(FIXTURE);
+  assert.equal(plan.tasks.length, 2, "fenced '### Task 99' must not start a task");
+  assert.equal(plan.tasks[1].steps.length, 2, "fenced '**Step 7**' must not add a step");
+  assert.deepEqual(plan.doneWhen, ["- Both tests pass."], "fenced '## Done when' must not end the plan");
+});
+
+test("parsePlan reads an optional Phase line", () =&gt; {
+  const withPhase = FIXTURE.replace("**Tech Stack:** Node.", "**Tech Stack:** Node.\n\n**Phase:** 3");
+  assert.equal(parsePlan(withPhase).meta.Phase, "3");
+  assert.equal(parsePlan(FIXTURE).meta.Phase, undefined);
+});
+
+test("deriveConfig derives everything from the markdown and filename", () =&gt; {
+  const cfg = deriveConfig(parsePlan(FIXTURE), "2026-01-01-widget.md");
+  assert.equal(cfg.md, "2026-01-01-widget.md");
+  assert.equal(cfg.docKey, "widget");
+  assert.equal(cfg.slug, "widget");
+  assert.equal(cfg.date, "2026-01-01");
+  assert.equal(cfg.phase, null);
+  assert.equal(cfg.eyebrow, "Implementation plan · 2026-01-01");
+  assert.equal(cfg.description, "Build the widget.");
+  assert.deepEqual(cfg.spec, {
+    href: "../specs/2026-01-01-widget-design.md",
+    label: "2026-01-01-widget-design",
+  });
+});
+
+test("deriveConfig includes the phase in the eyebrow when present", () =&gt; {
+  const withPhase = FIXTURE.replace("**Tech Stack:** Node.", "**Tech Stack:** Node.\n\n**Phase:** 3");
+  const cfg = deriveConfig(parsePlan(withPhase), "2026-01-01-widget.md");
+  assert.equal(cfg.phase, 3);
+  assert.equal(cfg.eyebrow, "Implementation plan · Phase 3 · 2026-01-01");
+});
+
+test("renderHtml uses task titles for the rail and derived links, with no relay branding", () =&gt; {
+  const plan = parsePlan(FIXTURE);
+  const html = renderHtml(plan, deriveConfig(plan, "2026-01-01-widget.md"));
+  assert.match(html, /&lt;title&gt;Widget · plan&lt;\/title&gt;/);
+  assert.match(html, /href="#task-1"[\s\S]*?Parse input/);
+  assert.match(html, /href="#task-2"[\s\S]*?Render output/);
+  assert.match(html, /href="\.\.\/specs\/2026-01-01-widget-design\.md"&gt;2026-01-01-widget-design&lt;\/a&gt;/);
+  assert.match(html, /data-doc="widget"/);
+  assert.match(html, /Source: &lt;code&gt;docs\/plans\/2026-01-01-widget\.md&lt;\/code&gt;/);
+  assert.match(html, /href="\.\.\/index\.html"/);
+  assert.doesNotMatch(html, /Figma Design Relay/);
+  assert.doesNotMatch(html, /Parity/);
+});
+
+test("renderHtml pre-checks completed steps", () =&gt; {
+  const plan = parsePlan(FIXTURE);
+  const html = renderHtml(plan, deriveConfig(plan, "2026-01-01-widget.md"));
+  assert.match(html, /id="widgett1s2" checked/);
+  assert.match(html, /&lt;li class="step is-done"&gt;/);
+});
+
+test("renderIndex lists one card per plan with counts", () =&gt; {
+  const plan = parsePlan(FIXTURE);
+  const cfg = deriveConfig(plan, "2026-01-01-widget.md");
+  const html = renderIndex([{ plan, cfg }]);
+  assert.match(html, /href="plans\/2026-01-01-widget\.html"/);
+  assert.match(html, /2 tasks · 4 steps/);
+  assert.match(html, /&lt;b&gt;Plans&lt;\/b&gt; — 1/);
+  assert.match(html, /href="assets\/doc\.css"/);
+});</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s2" />
+                  <label class="step__label" for="repostructuret2s2">Run the tests to see them fail</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node --test "docs/_src/*.test.mjs"</code><br />
+  <b>Expect</b> <span class="fail">FAIL</span> — <code>Cannot find module '.../docs/_src/plan.mjs'</code>.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s3" />
+                  <label class="step__label" for="repostructuret2s3">Copy the relay generator and strip what the library does not own</label>
+                </div>
+                <div class="step__body">
+<pre><code>mkdir -p docs/_src
+cp "C:/Users/sadhu/code/figma-design-relay/docs/superpowers/_src/build-plans.mjs" docs/_src/plan.mjs</code></pre>
+<p>Then edit <code>docs/_src/plan.mjs</code>:</p>
+<ol class="plain">
+  <li>Replace the file header comment (everything before <code>import</code>) with:</li>
+</ol>
+<pre><code>/**
+ * Parses a plan written in the strict plan-markdown shape that
+ * `superpowers:writing-plans` produces and renders it as an HTML page.
+ *
+ * The markdown is the single source of truth. This module is pure: it reads
+ * nothing from disk and knows nothing about which plans exist. Discovery,
+ * writing, and `--check` live in build-plans.mjs.
+ *
+ * Expected markdown shape:
+ *
+ *   # &lt;Title&gt; Implementation Plan
+ *   &gt; **For agentic workers:** ...
+ *   **Goal:** ...   **Architecture:** ...   **Tech Stack:** ...   **Spec:** ...
+ *   **Phase:** N            (optional)
+ *   ## Global Constraints
+ *   ### Task N: &lt;Name&gt; [R1, R2]        (chips optional)
+ *   **Files:** / **Interfaces:**
+ *   - [ ] **Step N: &lt;Label&gt;**
+ *   ## Done when
+ */</code></pre>
+<ol class="plain">
+  <li>Replace the three <code>import</code> lines and the <code>HERE</code>/<code>PLANS_DIR</code> constants with:</li>
+</ol>
+<pre><code>import { basename } from "node:path";</code></pre>
+<ol class="plain">
+  <li>Delete the whole <code>/** Plans this script owns ... */ const PLANS = [ ... ];</code> block.</li>
+</ol>
+<ol class="plain">
+  <li>Delete everything from <code>/* ---------- run ----</code> to the end of the file.</li>
+</ol>
+<ol class="plain">
+  <li>Prefix <code>export</code> onto <code>const parsePlan</code>, <code>const renderHtml</code>, and <code>const blocks</code>, <code>const inline</code> (the index renderer and tests use them).</li>
+</ol>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s4" />
+                  <label class="step__label" for="repostructuret2s4">Make the parser fence-aware and read <code>Phase</code></label>
+                </div>
+                <div class="step__body">
+<p>In <code>parsePlan</code>, the top-level <code>for</code> loop and the task-body collector both match structural lines without knowing whether they are inside a code fence. Apply these edits:</p>
+<p>a. Change the meta regex from <code>(Goal|Architecture|Tech Stack|Spec)</code> to <code>(Goal|Architecture|Tech Stack|Spec|Phase)</code>.</p>
+<p>b. Add a fence tracker at the top of the main loop. Replace:</p>
+<pre><code>  for (; i &lt; lines.length; i++) {
+    const line = lines[i];
+
+    if (line.startsWith("&gt; ")) {</code></pre>
+<p>with:</p>
+<pre><code>  let inFence = false;
+
+  for (; i &lt; lines.length; i++) {
+    const line = lines[i];
+
+    if (line.startsWith("```")) inFence = !inFence;
+    if (inFence) continue;
+
+    if (line.startsWith("&gt; ")) {</code></pre>
+<p>c. In the <code>### Task </code> branch, the body collector stops at the next <code>### Task </code> or <code>## Done when</code>. Replace:</p>
+<pre><code>      const body = [];
+      while (
+        i &lt; lines.length &amp;&amp;
+        !lines[i].startsWith("### Task ") &amp;&amp;
+        !lines[i].startsWith("## Done when")
+      ) {
+        body.push(lines[i++]);
+      }
+      i--;</code></pre>
+<p>with:</p>
+<pre><code>      const body = [];
+      let bodyFence = false;
+      while (i &lt; lines.length) {
+        if (lines[i].startsWith("```")) bodyFence = !bodyFence;
+        if (!bodyFence &amp;&amp; (lines[i].startsWith("### Task ") || lines[i].startsWith("## Done when"))) break;
+        body.push(lines[i++]);
+      }
+      i--;</code></pre>
+<p>d. In the same branch, the step splitter <code>while (j &lt; body.length) { const step = body[j].match(...</code> walks <code>body</code> line by line. Replace that loop with a fence-aware version:</p>
+<pre><code>      let stepFence = false;
+      while (j &lt; body.length) {
+        if (body[j].startsWith("```")) stepFence = !stepFence;
+        const step = stepFence ? null : body[j].match(/^- \[([ x])\] \*\*Step (\d+):\s*(.*?)\*\*$/);
+        if (!step) {
+          j++;
+          continue;
+        }
+        const sBody = [];
+        j++;
+        let innerFence = false;
+        while (j &lt; body.length) {
+          if (body[j].startsWith("```")) innerFence = !innerFence;
+          if (!innerFence &amp;&amp; /^- \[[ x]\] \*\*Step /.test(body[j])) break;
+          sBody.push(body[j++]);
+        }
+        task.steps.push({ no: step[2], label: step[3], done: step[1] === "x", body: sBody });
+      }</code></pre>
+<p>e. The <code>## Global Constraints</code> branch collects until <code>### Task</code>; it runs before any task so no fence handling is needed there.</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s5" />
+                  <label class="step__label" for="repostructuret2s5">Add <code>deriveConfig</code></label>
+                </div>
+                <div class="step__body">
+<p>Insert after <code>parsePlan</code> (before the <code>/* ---------- HTML emission</code> banner):</p>
+<pre><code>/* ---------- derived page metadata ------------------------------------------ */
+
+/** Strips inline markdown so a Goal line can sit in a &lt;meta&gt; attribute. */
+const plain = (text) =&gt;
+  text
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/"/g, "&amp;quot;");
+
+/**
+ * Reads the first `docs/...` path out of a **Spec:** line, whether written as
+ * a code span or a markdown link, and turns it into an href relative to
+ * docs/plans/. Returns null when the line carries no such path.
+ */
+const specLink = (specLine) =&gt; {
+  if (!specLine) return null;
+  const m = specLine.match(/`(docs\/[^`]+)`/) ?? specLine.match(/\]\((docs\/[^)\s]+)\)/);
+  if (!m) return null;
+  const path = m[1];
+  return { href: "../" + path.slice("docs/".length), label: basename(path).replace(/\.md$/, "") };
+};
+
+/**
+ * Everything the page needs that the relay used to keep in a hand-edited
+ * registry, derived from the markdown and the filename instead.
+ */
+export const deriveConfig = (plan, filename) =&gt; {
+  const md = basename(filename);
+  const stem = md.replace(/\.md$/, "");
+  const date = stem.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? "";
+  const docKey = stem.replace(/^\d{4}-\d{2}-\d{2}-/, "");
+  const phase = plan.meta.Phase ? Number(plan.meta.Phase) : null;
+  return {
+    md,
+    docKey,
+    slug: docKey.replace(/[^a-z0-9]/g, ""),
+    date,
+    phase,
+    eyebrow: ["Implementation plan", phase ? `Phase ${phase}` : null, date || null]
+      .filter(Boolean)
+      .join(" · "),
+    description: plain(plan.meta.Goal ?? ""),
+    spec: specLink(plan.meta.Spec),
+  };
+};</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s6" />
+                  <label class="step__label" for="repostructuret2s6">Replace <code>renderHtml</code> and add <code>renderIndex</code></label>
+                </div>
+                <div class="step__body">
+<p><code>renderTask</code> stays exactly as copied. The old <code>renderHtml</code> computed <code>const slug = cfg.docKey.replace(...)</code> itself; the new one passes <code>cfg.slug</code> straight through. Replace the whole <code>const renderHtml = (plan, cfg) =&gt; { ... };</code> with:</p>
+<pre><code>export const renderHtml = (plan, cfg) =&gt; {
+  const stepCount = plan.tasks.reduce((n, t) =&gt; n + t.steps.length, 0);
+
+  const rail = plan.tasks
+    .map(
+      (t) =&gt; `            &lt;li&gt;
+              &lt;a href="#task-${t.no}"
+                &gt;&lt;span&gt;${inline(t.title)} &lt;b class="rail__done"&gt;&lt;/b&gt;&lt;/span
+              &gt;&lt;/a&gt;
+            &lt;/li&gt;`
+    )
+    .join("\n");
+
+  const specMeta = cfg.spec
+    ? `          &lt;div&gt;&lt;b&gt;Spec&lt;/b&gt; — &lt;a href="${cfg.spec.href}"&gt;${cfg.spec.label}&lt;/a&gt;&lt;/div&gt;\n`
+    : "";
+
+  return `&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="utf-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1" /&gt;
+    &lt;title&gt;${inline(plan.title)} · plan&lt;/title&gt;
+    &lt;meta name="description" content="${cfg.description}" /&gt;
+    &lt;link rel="stylesheet" href="../assets/doc.css" /&gt;
+  &lt;/head&gt;
+  &lt;body data-doc="${cfg.docKey}"&gt;
+    &lt;a class="skip" href="#main"&gt;Skip to the plan&lt;/a&gt;
+
+    &lt;div class="shell"&gt;
+      &lt;header class="masthead"&gt;
+        &lt;p class="eyebrow"&gt;${cfg.eyebrow}&lt;/p&gt;
+        &lt;h1&gt;${inline(plan.title)}&lt;/h1&gt;
+        &lt;p class="standfirst"&gt;${inline(plan.meta.Goal ?? "")}&lt;/p&gt;
+
+        &lt;dl class="masthead__meta"&gt;
+${specMeta}          &lt;div&gt;&lt;b&gt;Tasks&lt;/b&gt; — ${plan.tasks.length}&lt;/div&gt;
+          &lt;div&gt;&lt;b&gt;Steps&lt;/b&gt; — ${stepCount}&lt;/div&gt;
+          &lt;div&gt;&lt;b&gt;Progress&lt;/b&gt; — saved in this browser&lt;/div&gt;
+        &lt;/dl&gt;
+      &lt;/header&gt;
+
+      &lt;blockquote&gt;
+${blocks(plan.blockquote)}
+      &lt;/blockquote&gt;
+
+      &lt;section class="brief"&gt;
+        &lt;h2 id="brief" data-spy&gt;The shape of it&lt;/h2&gt;
+        &lt;p&gt;&lt;strong&gt;Architecture.&lt;/strong&gt; ${inline(plan.meta.Architecture ?? "")}&lt;/p&gt;
+        &lt;p&gt;&lt;strong&gt;Tech stack.&lt;/strong&gt; ${inline(plan.meta["Tech Stack"] ?? "")}&lt;/p&gt;
+
+        &lt;h3&gt;Global constraints&lt;/h3&gt;
+        &lt;p&gt;Every task's requirements implicitly include these.&lt;/p&gt;
+${blocks(plan.constraints)}
+      &lt;/section&gt;
+
+      &lt;div class="layout"&gt;
+        &lt;nav class="rail" aria-label="Tasks"&gt;
+          &lt;p class="rail__title"&gt;Tasks&lt;/p&gt;
+          &lt;ol&gt;
+${rail}
+          &lt;/ol&gt;
+        &lt;/nav&gt;
+
+        &lt;main id="main"&gt;
+${plan.tasks.map((t) =&gt; renderTask(t, cfg.slug)).join("\n\n")}
+
+          &lt;section class="done-when" id="done" data-spy&gt;
+            &lt;h2&gt;Done when&lt;/h2&gt;
+${blocks(plan.doneWhen)}
+          &lt;/section&gt;
+
+          &lt;footer class="colophon"&gt;
+            &lt;span&gt;figma-mcp-skills&lt;/span&gt;
+            &lt;span&gt;Plan · ${cfg.date}&lt;/span&gt;
+            &lt;span&gt;Source: &lt;code&gt;docs/plans/${cfg.md}&lt;/code&gt;&lt;/span&gt;
+            &lt;span&gt;&lt;a href="../index.html"&gt;← All plans&lt;/a&gt;&lt;/span&gt;
+          &lt;/footer&gt;
+        &lt;/main&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script src="../assets/doc.js"&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+`;
+};
+
+/** The docs landing page: one card per plan, newest first. */
+export const renderIndex = (entries) =&gt; {
+  const sorted = [...entries].sort((a, b) =&gt; b.cfg.md.localeCompare(a.cfg.md));
+  const tasks = sorted.reduce((n, e) =&gt; n + e.plan.tasks.length, 0);
+  const steps = sorted.reduce((n, e) =&gt; n + e.plan.tasks.reduce((m, t) =&gt; m + t.steps.length, 0), 0);
+
+  const cards = sorted
+    .map(({ plan, cfg }) =&gt; {
+      const stepCount = plan.tasks.reduce((n, t) =&gt; n + t.steps.length, 0);
+      return `          &lt;a class="card" href="plans/${cfg.md.replace(/\.md$/, ".html")}"&gt;
+            &lt;p class="eyebrow"&gt;${cfg.eyebrow} · ${plan.tasks.length} tasks · ${stepCount} steps&lt;/p&gt;
+            &lt;h2&gt;${inline(plan.title)}&lt;/h2&gt;
+            &lt;p&gt;${inline(plan.meta.Goal ?? "")}&lt;/p&gt;
+            &lt;span class="card__more"&gt;Open the plan →&lt;/span&gt;
+          &lt;/a&gt;`;
+    })
+    .join("\n");
+
+  return `&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="utf-8" /&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1" /&gt;
+    &lt;title&gt;figma-mcp-skills — plans&lt;/title&gt;
+    &lt;meta name="description" content="Implementation plans for the figma-mcp-skills repository." /&gt;
+    &lt;link rel="stylesheet" href="assets/doc.css" /&gt;
+  &lt;/head&gt;
+  &lt;body data-doc="index"&gt;
+    &lt;a class="skip" href="#main"&gt;Skip to the plans&lt;/a&gt;
+
+    &lt;div class="shell"&gt;
+      &lt;header class="masthead"&gt;
+        &lt;p class="eyebrow"&gt;figma-mcp-skills · Plans&lt;/p&gt;
+        &lt;h1&gt;Implementation plans&lt;/h1&gt;
+        &lt;p class="standfirst"&gt;
+          Every page has a markdown twin beside it in &lt;code&gt;docs/plans/&lt;/code&gt;. The markdown is what
+          executor agents read; these pages are what people read. Step progress is saved in this
+          browser.
+        &lt;/p&gt;
+
+        &lt;dl class="masthead__meta"&gt;
+          &lt;div&gt;&lt;b&gt;Plans&lt;/b&gt; — ${sorted.length}&lt;/div&gt;
+          &lt;div&gt;&lt;b&gt;Tasks&lt;/b&gt; — ${tasks}&lt;/div&gt;
+          &lt;div&gt;&lt;b&gt;Steps&lt;/b&gt; — ${steps}&lt;/div&gt;
+        &lt;/dl&gt;
+      &lt;/header&gt;
+
+      &lt;main id="main"&gt;
+        &lt;div class="cards"&gt;
+${cards}
+        &lt;/div&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+`;
+};</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s7" />
+                  <label class="step__label" for="repostructuret2s7">Run the tests to see them pass</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node --test "docs/_src/*.test.mjs"</code><br />
+  <b>Expect</b> <span class="pass">PASS</span> — 8 tests, 0 failures.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret2s8" />
+                  <label class="step__label" for="repostructuret2s8">Commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>git add docs/_src/plan.mjs docs/_src/plan.test.mjs
+git commit -m "feat(docs): plan parser and renderer library
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-3" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 03</span>
+              <h2>Build CLI with discovery, index, and <code>--check</code></h2>
+              
+            </div>
+<p>The relay's script needed every plan registered by hand. This one finds <code>docs/plans/*.md</code>, writes each <code>.html</code> beside it plus <code>docs/index.html</code>, and with <code>--check</code> reports stale output without writing.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>docs/_src/build-plans.mjs</code></li>
+                <li><span class="verb">Create</span><code>docs/_src/build-plans.test.mjs</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — <code>parsePlan</code>, <code>deriveConfig</code>, <code>renderHtml</code>, <code>renderIndex</code> from <code>./plan.mjs</code>.<br />
+                <strong>Produces</strong> — <code>build({ plansDir, indexPath, check }): { entries, stale: string[], written: string[] }</code> and the CLI <code>node docs/_src/build-plans.mjs [--check]</code>, exit 1 when <code>--check</code> finds stale files. Task 9's <code>scripts/check.mjs</code> shells out to the CLI.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret3s1" />
+                  <label class="step__label" for="repostructuret3s1">Write the failing tests</label>
+                </div>
+                <div class="step__body">
+<p>Create <code>docs/_src/build-plans.test.mjs</code>:</p>
+<pre><code>import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { build } from "./build-plans.mjs";
+
+const CLI = fileURLToPath(new URL("./build-plans.mjs", import.meta.url));
+
+const PLAN = `# Tiny Implementation Plan
+
+&gt; **For agentic workers:** read this.
+
+**Goal:** Do one thing.
+
+**Architecture:** One file.
+
+**Tech Stack:** Node.
+
+**Spec:** \`docs/specs/tiny.md\`
+
+## Global Constraints
+
+- None.
+
+---
+
+### Task 1: Only task
+
+**Files:**
+
+- Create: \`a.mjs\`
+
+**Interfaces:**
+
+- Consumes: nothing.
+- Produces: nothing.
+
+- [ ] **Step 1: Do it**
+
+Run: \`true\`
+Expected: PASS
+
+## Done when
+
+- Done.
+`;
+
+const scratch = () =&gt; {
+  const root = mkdtempSync(join(tmpdir(), "fms-plans-"));
+  const plansDir = join(root, "plans");
+  mkdirSync(plansDir);
+  writeFileSync(join(plansDir, "2026-02-02-tiny.md"), PLAN);
+  return { root, plansDir, indexPath: join(root, "index.html") };
+};
+
+test("build writes one html per plan and an index", () =&gt; {
+  const { root, plansDir, indexPath } = scratch();
+  const result = build({ plansDir, indexPath, check: false });
+  assert.equal(result.entries.length, 1);
+  assert.deepEqual(result.stale, []);
+  assert.equal(result.written.length, 2);
+  assert.ok(existsSync(join(plansDir, "2026-02-02-tiny.html")));
+  assert.match(readFileSync(indexPath, "utf8"), /2026-02-02-tiny\.html/);
+  rmSync(root, { recursive: true });
+});
+
+test("build is idempotent: a second run writes nothing", () =&gt; {
+  const { root, plansDir, indexPath } = scratch();
+  build({ plansDir, indexPath, check: false });
+  const again = build({ plansDir, indexPath, check: false });
+  assert.deepEqual(again.written, []);
+  rmSync(root, { recursive: true });
+});
+
+test("check reports stale html after the markdown changes, and writes nothing", () =&gt; {
+  const { root, plansDir, indexPath } = scratch();
+  build({ plansDir, indexPath, check: false });
+  const before = readFileSync(join(plansDir, "2026-02-02-tiny.html"), "utf8");
+  writeFileSync(join(plansDir, "2026-02-02-tiny.md"), PLAN.replace("Do one thing.", "Do two things."));
+  const result = build({ plansDir, indexPath, check: true });
+  assert.deepEqual(result.stale, [join(plansDir, "2026-02-02-tiny.html"), indexPath]);
+  assert.equal(readFileSync(join(plansDir, "2026-02-02-tiny.html"), "utf8"), before);
+  rmSync(root, { recursive: true });
+});
+
+test("check passes when html is current", () =&gt; {
+  const { root, plansDir, indexPath } = scratch();
+  build({ plansDir, indexPath, check: false });
+  assert.deepEqual(build({ plansDir, indexPath, check: true }).stale, []);
+  rmSync(root, { recursive: true });
+});
+
+test("build ignores non-markdown files in the plans folder", () =&gt; {
+  const { root, plansDir, indexPath } = scratch();
+  writeFileSync(join(plansDir, "notes.txt"), "not a plan");
+  assert.equal(build({ plansDir, indexPath, check: false }).entries.length, 1);
+  rmSync(root, { recursive: true });
+});
+
+test("CLI --check exits 1 on stale output and 0 when current", () =&gt; {
+  const { root, plansDir, indexPath } = scratch();
+  const env = { ...process.env, FMS_PLANS_DIR: plansDir, FMS_INDEX_PATH: indexPath };
+  assert.throws(() =&gt; execFileSync(process.execPath, [CLI, "--check"], { env, stdio: "pipe" }));
+  execFileSync(process.execPath, [CLI], { env, stdio: "pipe" });
+  execFileSync(process.execPath, [CLI, "--check"], { env, stdio: "pipe" });
+  rmSync(root, { recursive: true });
+});</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret3s2" />
+                  <label class="step__label" for="repostructuret3s2">Run the tests to see them fail</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node --test "docs/_src/*.test.mjs"</code><br />
+  <b>Expect</b> <span class="fail">FAIL</span> — <code>Cannot find module '.../docs/_src/build-plans.mjs'</code>; the 8 plan tests still pass.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret3s3" />
+                  <label class="step__label" for="repostructuret3s3">Write the CLI</label>
+                </div>
+                <div class="step__body">
+<p>Create <code>docs/_src/build-plans.mjs</code>:</p>
+<pre><code>/**
+ * Renders every plan under docs/plans/ to an HTML page beside it, plus
+ * docs/index.html. The markdown is the source of truth; never hand-edit the
+ * HTML — edit the markdown and run this again.
+ *
+ * Usage:  node docs/_src/build-plans.mjs [--check]
+ *
+ * --check writes nothing and exits 1 if any page on disk differs from what
+ * the markdown would produce. scripts/check.mjs runs it.
+ *
+ * FMS_PLANS_DIR and FMS_INDEX_PATH override the locations; tests use them.
+ */
+
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { deriveConfig, parsePlan, renderHtml, renderIndex } from "./plan.mjs";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+export const build = ({ plansDir, indexPath, check }) =&gt; {
+  const files = readdirSync(plansDir)
+    .filter((f) =&gt; f.endsWith(".md"))
+    .sort();
+
+  const entries = [];
+  const outputs = [];
+  for (const md of files) {
+    const plan = parsePlan(readFileSync(join(plansDir, md), "utf8"));
+    const cfg = deriveConfig(plan, md);
+    entries.push({ plan, cfg });
+    outputs.push({ path: join(plansDir, md.replace(/\.md$/, ".html")), html: renderHtml(plan, cfg) });
+  }
+  outputs.push({ path: indexPath, html: renderIndex(entries) });
+
+  const stale = [];
+  const written = [];
+  for (const out of outputs) {
+    const current = existsSync(out.path) ? readFileSync(out.path, "utf8") : null;
+    if (current === out.html) continue;
+    if (check) stale.push(out.path);
+    else {
+      writeFileSync(out.path, out.html);
+      written.push(out.path);
+    }
+  }
+  return { entries, stale, written };
+};
+
+// Lower-cased because on Windows the drive letter can differ in case between the two.
+const isMain =
+  process.argv[1] &amp;&amp; pathToFileURL(process.argv[1]).href.toLowerCase() === import.meta.url.toLowerCase();
+
+if (isMain) {
+  const check = process.argv.includes("--check");
+  const plansDir = process.env.FMS_PLANS_DIR ?? join(HERE, "..", "plans");
+  const indexPath = process.env.FMS_INDEX_PATH ?? join(HERE, "..", "index.html");
+  const { entries, stale, written } = build({ plansDir, indexPath, check });
+
+  for (const { plan, cfg } of entries) {
+    const steps = plan.tasks.reduce((n, t) =&gt; n + t.steps.length, 0);
+    console.log(`${cfg.md}  (${plan.tasks.length} tasks, ${steps} steps)`);
+  }
+  if (check) {
+    if (stale.length) {
+      console.error(`stale: ${stale.map((p) =&gt; basename(p)).join(", ")} — run node docs/_src/build-plans.mjs`);
+      process.exit(1);
+    }
+    console.log("plans: up to date");
+  } else {
+    console.log(written.length ? `wrote ${written.length} file(s)` : "nothing to write");
+  }
+}</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret3s4" />
+                  <label class="step__label" for="repostructuret3s4">Run the tests to see them pass</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node --test "docs/_src/*.test.mjs"</code><br />
+  <b>Expect</b> <span class="pass">PASS</span> — 14 tests, 0 failures.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret3s5" />
+                  <label class="step__label" for="repostructuret3s5">Commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>git add docs/_src/build-plans.mjs docs/_src/build-plans.test.mjs
+git commit -m "feat(docs): plan build CLI with discovery, index, and --check
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-4" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 04</span>
+              <h2>Page assets and the first rendered plan</h2>
+              
+            </div>
+<p>Copy the stylesheet and page script, re-key the progress store so it does not share <code>localStorage</code> with the relay's pages, and render this plan for real.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>docs/assets/doc.css</code> (copy of <code>C:/Users/sadhu/code/figma-design-relay/docs/superpowers/assets/doc.css</code>)</li>
+                <li><span class="verb">Create</span><code>docs/assets/doc.js</code> (copy of <code>C:/Users/sadhu/code/figma-design-relay/docs/superpowers/assets/doc.js</code>, one line changed)</li>
+                <li><span class="verb">Create</span><code>docs/plans/2026-09-20-repo-structure.html</code> (generated)</li>
+                <li><span class="verb">Create</span><code>docs/index.html</code> (generated)</li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — the CLI from Task 3.<br />
+                <strong>Produces</strong> — the rendered pages the spec calls for. Nothing later depends on their contents.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret4s1" />
+                  <label class="step__label" for="repostructuret4s1">Copy the assets</label>
+                </div>
+                <div class="step__body">
+<pre><code>mkdir -p docs/assets
+cp "C:/Users/sadhu/code/figma-design-relay/docs/superpowers/assets/doc.css" docs/assets/doc.css
+cp "C:/Users/sadhu/code/figma-design-relay/docs/superpowers/assets/doc.js" docs/assets/doc.js</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret4s2" />
+                  <label class="step__label" for="repostructuret4s2">Re-key the progress store and retitle the script</label>
+                </div>
+                <div class="step__body">
+<p>In <code>docs/assets/doc.js</code> change the first comment line from <code>/* Figma Design Relay — document behaviours.</code> to <code>/* figma-mcp-skills — document behaviours.</code> and change</p>
+<pre><code>    var key = "fmb-plan:" + document.body.dataset.doc;</code></pre>
+<p>to</p>
+<pre><code>    var key = "fms-plan:" + document.body.dataset.doc;</code></pre>
+<p class="expect">
+  <b>Run</b> <code>grep -n "fmb-plan\|Figma Design Relay" docs/assets/doc.js docs/assets/doc.css</code><br />
+  <b>Expect</b> <span class="pass">prints</span> nothing.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret4s3" />
+                  <label class="step__label" for="repostructuret4s3">Render this plan</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node docs/_src/build-plans.mjs</code><br />
+  <b>Expect</b> <span class="pass">prints</span> <code>2026-09-20-repo-structure.md  (9 tasks, N steps)</code> and <code>wrote 2 file(s)</code>; <code>docs/plans/2026-09-20-repo-structure.html</code> and <code>docs/index.html</code> now exist.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret4s4" />
+                  <label class="step__label" for="repostructuret4s4">Confirm the parse survived this plan's embedded markdown</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>grep -c '&lt;article class="task"' docs/plans/2026-09-20-repo-structure.html; grep -o 'Task 0[0-9]&lt;/span&gt;' docs/plans/2026-09-20-repo-structure.html | tail -1</code><br />
+  <b>Expect</b> <code>9</code> and <code>Task 09&lt;/span&gt;</code> — every task rendered, none swallowed by a fenced <code>### Task</code> or <code>## Done when</code> inside a step.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret4s5" />
+                  <label class="step__label" for="repostructuret4s5">Confirm <code>--check</code> is clean, then commit</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node docs/_src/build-plans.mjs --check</code><br />
+  <b>Expect</b> <code>plans: up to date</code>, exit 0.
+</p>
+<pre><code>git add docs/assets docs/plans docs/index.html
+git commit -m "docs: page assets and rendered plan
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-5" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 05</span>
+              <h2>Seed spec — the Figma tool surface</h2>
+              
+            </div>
+<p>Facts every Figma skill needs, in one place, so skills link here instead of restating them.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>specs/figma-mcp-tools.md</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — nothing.<br />
+                <strong>Produces</strong> — the path <code>specs/figma-mcp-tools.md</code>, linked from Task 7's <code>authoring</code> skill, Task 8's <code>CLAUDE.md</code>, and Task 9's README.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret5s1" />
+                  <label class="step__label" for="repostructuret5s1">Write the spec</label>
+                </div>
+                <div class="step__body">
+<pre><code># Figma MCP tool surface
+
+**Used by:** every skill that touches a Figma document.
+**Source of truth:** the relay repo's docs — `C:/Users/sadhu/code/figma-design-relay/docs/run-script.md`, `design-context.md`, `serialized-nodes.md` — and the tool descriptions the connected server advertises. When this file and a tool description disagree, the tool description wins; fix this file.
+
+## Which server is connected
+
+Two servers may be configured; the user picks one per session. Both expose the same tool names — only the `mcp__&lt;server&gt;__` prefix differs. Reference tools by bare name and call whichever prefix is present.
+
+- `figma-design-relay` — the user's fork. Everything below, including `run_script`.
+- `figma-bridge` — the upstream `@gethopp/figma-mcp-bridge`. Everything below **except** `run_script`, and its serializer omits the design-system identity fields (component/instance identity, resolved variable and style names, layout intent).
+
+If neither is connected, say so and stop. Do not suggest editing the MCP configuration.
+
+## Tools
+
+Read:
+
+- `list_files` — connected Figma files and their `fileKey`s.
+- `get_metadata` — file name, pages, current page.
+- `get_document` — current page's node tree. Large on big pages; prefer `get_selection` or `get_node`.
+- `get_selection` — nodes selected in the editor.
+- `get_node` — one node by ID.
+- `get_styles` — local paint, text, effect, and grid styles.
+- `get_variable_defs` — variable collections, modes, and values (design tokens).
+- `get_design_context` — reference code, tokens, exported assets, and a screenshot for a node in one call. Assets are written under `assetDir`, which must be inside the server's working directory.
+- `get_screenshot` — PNG/SVG/JPG/PDF as base64. `save_screenshots` writes them to disk instead.
+
+Write (design editor only):
+
+- Text: `set_text_content`, `set_text_properties`.
+- Node: `set_node_properties` (name, position, size, visibility, opacity, corner radius), `set_node_visibility`.
+- Paint: `set_solid_fill`, `set_gradient_fill`, `set_stroke_properties`, `set_effects`.
+- Layout: `set_auto_layout`.
+- Create: `create_page`, `create_frame`, `create_text`, `create_shape` (rectangle, ellipse, line), `create_image` (local path, URL, or data URI), `import_html_layers` (html-figma JSON).
+- Structure: `duplicate_nodes`, `reparent_nodes`, `group_nodes`, `ungroup_node`, `delete_nodes`.
+- Viewport: `set_selection`, `scroll_and_zoom_into_view` (both also work in Dev Mode).
+- Motion (beta): `get_motion_styles`, `get_node_motion`, `apply_animation_style`, `remove_animation_style`, `apply_manual_keyframe_track`, `remove_manual_keyframe_track`, `set_timeline_duration`.
+
+Escape hatch (relay only):
+
+- `run_script` — arbitrary JavaScript against the Figma Plugin API. Use it for anything the dedicated tools do not cover: components, variables, styles authoring, boolean operations, prototyping. Not atomic.
+
+## Rules that apply to every call
+
+- Node IDs use colon format: `4029:12345`. A URL's `node-id=4029-12345` must be converted.
+- Every tool takes an optional `fileKey`. Required when more than one file is connected; call `list_files` first.
+- Dev Mode is read-only. Write tools return a clear error there; do not retry them.
+- The current user must have edit permission on the file for any write tool.
+- `delete_nodes` requires `confirm: true`. Confirm with the user before deleting anything you did not create in this session.
+- `run_script` is **not atomic** — a script that throws part-way leaves its earlier mutations in the file. Prefer dedicated tools when they exist; keep scripts small; read back the result.
+- File paths (`create_image`, `import_html_layers`, `save_screenshots`, `get_design_context`'s `assetDir`) resolve relative to the MCP server's working directory and must stay inside it.
+- Text edits load the node's current fonts first. New text defaults to Inter Regular unless a font is given.
+- `create_page` returns the page ID; pass it as `parentId` to create tools to author on that page without switching the editor.
+- Requests time out after 180 seconds.
+- Serialized nodes omit fields that carry nothing — absence of `component`, `boundVariables`, or `styles` means the node has none, not that the lookup failed.</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret5s2" />
+                  <label class="step__label" for="repostructuret5s2">Verify it is a spec, not a skill</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>grep -nE "^[0-9]+\. |^## Steps" specs/figma-mcp-tools.md</code><br />
+  <b>Expect</b> <span class="pass">prints</span> nothing — no numbered procedure, no steps section.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret5s3" />
+                  <label class="step__label" for="repostructuret5s3">Commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>git add specs/figma-mcp-tools.md
+git commit -m "docs: seed spec for the Figma MCP tool surface
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-6" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 06</span>
+              <h2>Templates</h2>
+              
+            </div>
+<p>Skeletons for the two formats that already exist. They live outside <code>.claude/skills/</code> so the harness does not discover the skill template as a skill.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>templates/SKILL.md</code></li>
+                <li><span class="verb">Create</span><code>templates/spec.md</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — nothing.<br />
+                <strong>Produces</strong> — the two template paths, referenced by Task 7's <code>authoring</code> skill.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret6s1" />
+                  <label class="step__label" for="repostructuret6s1">Write <code>templates/SKILL.md</code></label>
+                </div>
+                <div class="step__body">
+<pre><code>---
+name: &lt;kebab-case-name, must equal the folder name&gt;
+description: Use when &lt;the situation that should trigger this skill&gt; — &lt;what it does, one clause&gt;
+---
+
+# &lt;Title&gt;
+
+**Requires:** &lt;tools this skill calls; mark relay-only tools, e.g. `run_script` (relay only)&gt;
+**Reads:** `specs/&lt;topic&gt;.md` — &lt;why&gt;
+
+## When not to use
+
+- &lt;the neighbouring situation this skill is not for, and what to use instead&gt;
+
+## Steps
+
+1. &lt;one action&gt;
+2. &lt;one action&gt;
+3. &lt;one action&gt;
+
+## Gotchas
+
+- &lt;a mistake this procedure is prone to, and how to avoid it&gt;
+
+## Verify
+
+- &lt;what to check before saying the task is done&gt;</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret6s2" />
+                  <label class="step__label" for="repostructuret6s2">Write <code>templates/spec.md</code></label>
+                </div>
+                <div class="step__body">
+<pre><code># &lt;Topic&gt;
+
+**Used by:** &lt;which skills link here&gt;
+**Source of truth:** &lt;where these facts come from, so they can be re-checked&gt;
+
+## &lt;Section&gt;
+
+&lt;Facts only: contracts, tables, enumerations, conventions, examples. No steps — if you are
+writing "then do X", it belongs in a skill.&gt;</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret6s3" />
+                  <label class="step__label" for="repostructuret6s3">Confirm the harness will not discover the template</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>ls .claude/skills/ 2&gt;/dev/null; find . -name SKILL.md -not -path './.git/*'</code><br />
+  <b>Expect</b> the <code>ls</code> shows nothing yet (Task 7 adds the first skill); <code>find</code> shows only <code>./templates/SKILL.md</code>.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret6s4" />
+                  <label class="step__label" for="repostructuret6s4">Commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>git add templates/
+git commit -m "docs: skill and spec templates
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-7" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 07</span>
+              <h2>The <code>authoring</code> skill</h2>
+              
+            </div>
+<p>The repo's maintenance procedure as a native skill: how to add or edit skills, specs, templates, and plans, and how to persist a session instruction. The trigger for persisting lives in <code>CLAUDE.md</code> (Task 8); the routing lives here.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>.claude/skills/authoring/SKILL.md</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — <code>templates/SKILL.md</code>, <code>templates/spec.md</code>, <code>docs/_src/build-plans.mjs</code>, <code>scripts/check.mjs</code> (Task 9).<br />
+                <strong>Produces</strong> — the skill name <code>authoring</code>, referenced by <code>CLAUDE.md</code> and the README.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret7s1" />
+                  <label class="step__label" for="repostructuret7s1">Write the skill</label>
+                </div>
+                <div class="step__body">
+<pre><code>---
+name: authoring
+description: Use when adding or editing a skill, spec, template, or plan in this repo, or when a session instruction from the user should be persisted — decides skill vs spec, keeps README and rendered plans in step
+---
+
+# Authoring skills, specs, and instructions
+
+**Requires:** file tools, `node` (for `docs/_src/build-plans.mjs` and `scripts/check.mjs`).
+**Reads:** `templates/SKILL.md`, `templates/spec.md`.
+
+## When not to use
+
+- Doing Figma work itself — use the relevant Figma skill.
+- Designing a new feature for this repo — use `superpowers:brainstorming` first; come back here to write the resulting files.
+
+## Skill or spec?
+
+A **skill** is what to do: trigger, required tools, steps, gotchas, verification. A **spec** is what is true: contracts, tables, enumerations, conventions, examples. No steps in a spec.
+
+Extract a skill section into a spec when any of these hold:
+
+- it is consulted mid-task rather than read top-to-bottom;
+- it is a table or code block over ~15 lines;
+- a second skill needs it.
+
+Extraction is part of writing or editing the skill. Decide it yourself; do not ask.
+
+## Steps — new or edited skill
+
+1. Copy `templates/SKILL.md` to `.claude/skills/&lt;name&gt;/SKILL.md`. Folder name equals `name` in the frontmatter.
+2. Write the `description` as a trigger: "Use when …". This line is all the harness loads into context, so it must say *when*, not just *what*.
+3. List required tools under **Requires**; mark relay-only tools (`run_script`) so the skill fails clearly when the upstream bridge is connected.
+4. Write steps as single actions. Keep the body under ~100 lines; link `specs/*.md` by relative path instead of restating facts.
+5. Apply the skill-or-spec rule above to every section.
+6. For craft — testing the skill on a fresh subagent, tightening the description — follow `superpowers:writing-skills`.
+7. Add a line to `README.md` under **Skills**: `- [`&lt;name&gt;`](.claude/skills/&lt;name&gt;/SKILL.md) — &lt;description&gt;`.
+8. Run `node scripts/check.mjs`.
+
+## Steps — new or edited spec
+
+1. Copy `templates/spec.md` to `specs/&lt;topic&gt;.md`.
+2. Name the source of truth so the facts can be re-checked later.
+3. Facts only. If a sentence says "then do X", move it to a skill.
+4. Add a line to `README.md` under **Specs**: `- [`specs/&lt;topic&gt;.md`](specs/&lt;topic&gt;.md) — &lt;one line&gt;`.
+5. Run `node scripts/check.mjs`.
+
+## Steps — persisting a session instruction
+
+`CLAUDE.md` says when to persist (durable instructions: "always", "never", "whenever", "from now on", standing preferences, corrections of approach). This is where it goes:
+
+- general agent behaviour in this repo → `.claude/CLAUDE.md`
+- how to perform an existing skill → that skill's `SKILL.md`
+- a fact, contract, or convention → the relevant `specs/*.md`, or a new one
+- a new procedure → a new skill, via the steps above
+
+1. Write it in the same turn the user states it, then tell the user where it went.
+2. Keep `CLAUDE.md` under 60 lines. If a section passes ~10 lines, extract it into a skill or spec and leave a one-line pointer.
+
+## Steps — plans
+
+1. `superpowers:writing-plans` writes to `docs/plans/YYYY-MM-DD-&lt;topic&gt;.md`; design docs go to `docs/specs/`.
+2. After any plan edit, including ticking a step, run `node docs/_src/build-plans.mjs`. Commit the `.html` with the `.md`.
+3. Never hand-edit a generated `.html` or `docs/index.html`.
+
+## Templates
+
+Add `templates/&lt;format&gt;.md` when a format has appeared three times. Never put a `SKILL.md` under `.claude/skills/` unless it is a real skill — the harness discovers that folder.
+
+## Gotchas
+
+- A skill whose description says only what it does, not when, never triggers.
+- Renaming a skill folder without updating `name` breaks discovery; `scripts/check.mjs` catches it.
+- Removing a skill or spec without removing its README line fails the check.
+
+## Verify
+
+- `node scripts/check.mjs` prints `check: ok`.</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret7s2" />
+                  <label class="step__label" for="repostructuret7s2">Confirm discovery-shape and length</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>head -4 .claude/skills/authoring/SKILL.md; wc -l &lt; .claude/skills/authoring/SKILL.md</code><br />
+  <b>Expect</b> the first line is <code>---</code>, the second starts <code>name: authoring</code>, the third starts <code>description: Use when</code>; the line count is under 100.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret7s3" />
+                  <label class="step__label" for="repostructuret7s3">Commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>git add .claude/skills/authoring/SKILL.md
+git commit -m "feat: authoring skill
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-8" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 08</span>
+              <h2><code>CLAUDE.md</code></h2>
+              
+            </div>
+<p>The only always-on file. Short, and every rule it carries is one the agent needs before it can pick a skill.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>.claude/CLAUDE.md</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — the paths from Tasks 1, 5, 7, and 9.<br />
+                <strong>Produces</strong> — nothing later depends on it.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret8s1" />
+                  <label class="step__label" for="repostructuret8s1">Write the file</label>
+                </div>
+                <div class="step__body">
+<pre><code># figma-mcp-skills
+
+Skills, reference specs, and standing instructions for designing in Figma through an MCP server.
+The Figma Design Relay server ships no skills; this repo is that layer. Keep this file short —
+everything else is loaded on demand.
+
+## Figma MCP
+
+- Two servers may be configured: `figma-design-relay` (the user's fork) and `figma-bridge`
+  (upstream). The user picks one per session. Never propose changing that configuration.
+- Tool names are identical on both; only the `mcp__&lt;server&gt;__` prefix differs. Use whichever
+  Figma server is connected. If none is, say so and stop.
+- `run_script` exists only on the relay. A skill that needs it says so under **Requires**.
+- Tool surface, IDs, `fileKey`, Dev Mode, deletion, and path rules: `specs/figma-mcp-tools.md`.
+
+## How to work here
+
+- Skills live in `.claude/skills/&lt;name&gt;/SKILL.md` and are discovered natively — there is no
+  index here on purpose. Read the whole `SKILL.md` before executing a skill.
+- `specs/` is reference knowledge. Read a spec only when a skill links to it.
+- Scratch files go in `dump/`, never the repo root. Nothing in `dump/` is project context.
+- Design docs go in `docs/specs/`, plans in `docs/plans/`. Plans render to HTML with
+  `node docs/_src/build-plans.mjs`; never hand-edit the HTML.
+- `node scripts/check.mjs` verifies skills, the README catalogue, and rendered plans. Run it
+  before saying repo maintenance is done.
+
+## Persisting instructions
+
+When the user states a durable instruction — "always", "never", "whenever", "from now on", a
+standing preference, or a correction of your approach — write it down in the same turn and say
+where it went. Task-scoped instructions ("for now", "this time") are never persisted. Routing
+and procedure: the `authoring` skill.
+
+## Conventions
+
+- One skill per folder; folder name equals the frontmatter `name`.
+- `README.md` lists every skill and spec; update it in the same change.
+- Commit messages: `feat:`, `fix:`, `docs:`, `chore:`.
+- Everything is LF (`.gitattributes` enforces it).</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret8s2" />
+                  <label class="step__label" for="repostructuret8s2">Check the length budget</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>wc -l &lt; .claude/CLAUDE.md</code><br />
+  <b>Expect</b> a number under 60.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret8s3" />
+                  <label class="step__label" for="repostructuret8s3">Commit</label>
+                </div>
+                <div class="step__body">
+<pre><code>git add .claude/CLAUDE.md
+git commit -m "docs: CLAUDE.md
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <article class="task" id="task-9" data-spy>
+            <div class="task__head">
+              <span class="task__no">Task 09</span>
+              <h2>Repo check script and README catalogue</h2>
+              
+            </div>
+<p>Make the spec's verification list executable, then write the README so it passes.</p>
+
+            <div class="tension">
+              <span class="tension__count"></span><span class="tension__fill"></span>
+            </div>
+
+            <dl class="files">
+              <dt>Files</dt>
+              <dd>
+                <ul>
+                <li><span class="verb">Create</span><code>scripts/check.mjs</code></li>
+                <li><span class="verb">Create</span><code>README.md</code></li>
+                </ul>
+              </dd>
+              <dt>Interfaces</dt>
+              <dd>
+                <strong>Consumes</strong> — <code>node docs/_src/build-plans.mjs --check</code> (Task 3).<br />
+                <strong>Produces</strong> — <code>node scripts/check.mjs</code>, exit 0 with <code>check: ok</code> when the repo is consistent. <code>CLAUDE.md</code> and the <code>authoring</code> skill already refer to it.
+              </dd>
+            </dl>
+
+            <ol class="steps">
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret9s1" />
+                  <label class="step__label" for="repostructuret9s1">Write the check script</label>
+                </div>
+                <div class="step__body">
+<p>Create <code>scripts/check.mjs</code>:</p>
+<pre><code>/**
+ * Repo consistency check. Exit 0 and print "check: ok" when:
+ *   - every .claude/skills/&lt;name&gt;/SKILL.md has frontmatter with name === folder and a description;
+ *   - README.md links every skill and every specs/*.md, and links nothing that is missing;
+ *   - every rendered plan page is current (node docs/_src/build-plans.mjs --check).
+ * Otherwise print each problem and exit 1.
+ */
+
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const problems = [];
+
+// Skills
+const skillsDir = join(ROOT, ".claude", "skills");
+const skills = existsSync(skillsDir)
+  ? readdirSync(skillsDir).filter((d) =&gt; statSync(join(skillsDir, d)).isDirectory())
+  : [];
+for (const skill of skills) {
+  const file = join(skillsDir, skill, "SKILL.md");
+  if (!existsSync(file)) {
+    problems.push(`skill ${skill}: missing SKILL.md`);
+    continue;
+  }
+  const fm = readFileSync(file, "utf8").match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!fm) {
+    problems.push(`skill ${skill}: no frontmatter`);
+    continue;
+  }
+  const name = fm[1].match(/^name:\s*(.+?)\s*$/m)?.[1];
+  const description = fm[1].match(/^description:\s*(.+?)\s*$/m)?.[1];
+  if (name !== skill) problems.push(`skill ${skill}: frontmatter name is "${name}", folder is "${skill}"`);
+  if (!description) problems.push(`skill ${skill}: missing description`);
+}
+
+// Specs
+const specs = readdirSync(join(ROOT, "specs"))
+  .filter((f) =&gt; f.endsWith(".md"))
+  .map((f) =&gt; `specs/${f}`);
+
+// README catalogue
+const readme = readFileSync(join(ROOT, "README.md"), "utf8");
+const linked = [...readme.matchAll(/\]\(([^)]+)\)/g)].map((m) =&gt; m[1]);
+for (const skill of skills) {
+  const path = `.claude/skills/${skill}/SKILL.md`;
+  if (!linked.includes(path)) problems.push(`README: skill "${skill}" is not listed (${path})`);
+}
+for (const spec of specs) {
+  if (!linked.includes(spec)) problems.push(`README: spec ${spec} is not listed`);
+}
+for (const path of linked) {
+  if ((path.startsWith(".claude/skills/") || path.startsWith("specs/")) &amp;&amp; !existsSync(join(ROOT, path))) {
+    problems.push(`README: links ${path}, which does not exist`);
+  }
+}
+
+// Rendered plans
+const plans = spawnSync(process.execPath, [join(ROOT, "docs", "_src", "build-plans.mjs"), "--check"], {
+  encoding: "utf8",
+});
+if (plans.status !== 0) problems.push(`docs: ${plans.stderr.trim() || "plan HTML is stale"}`);
+
+if (problems.length) {
+  console.error(problems.join("\n"));
+  process.exit(1);
+}
+console.log("check: ok");</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret9s2" />
+                  <label class="step__label" for="repostructuret9s2">Run it to see it fail on the missing README</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node scripts/check.mjs</code><br />
+  <b>Expect</b> exit 1 with an <code>ENOENT</code> error for <code>README.md</code> (the script has nothing to catalogue against yet).
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret9s3" />
+                  <label class="step__label" for="repostructuret9s3">Write the README</label>
+                </div>
+                <div class="step__body">
+<pre><code># figma-mcp-skills
+
+Skills, reference specs, and standing instructions that Claude Code loads on demand while
+designing in Figma through an MCP server ([Figma Design Relay](https://github.com/SadhuG/figma-design-relay)
+or the upstream bridge). The relay ships no skills; this repo is that layer.
+
+The agent's always-on context is `.claude/CLAUDE.md`, kept short. Skills are discovered natively
+from `.claude/skills/`; the one-line `description` of each is all that sits in context until the
+skill is invoked. Specs are read only when a skill links to them.
+
+## Skills
+
+- [`authoring`](.claude/skills/authoring/SKILL.md) — Use when adding or editing a skill, spec, template, or plan in this repo, or when a session instruction from the user should be persisted — decides skill vs spec, keeps README and rendered plans in step
+
+## Specs
+
+- [`specs/figma-mcp-tools.md`](specs/figma-mcp-tools.md) — the shared Figma tool surface: which tools each server has, and the rules (node IDs, `fileKey`, Dev Mode, deletion, paths, atomicity) every call must respect
+
+## Layout
+
+- `.claude/CLAUDE.md` — always-on instructions
+- `.claude/skills/&lt;name&gt;/SKILL.md` — one skill per folder
+- `specs/` — reference knowledge shared by skills
+- `templates/` — skeletons for new skills and specs
+- `docs/specs/`, `docs/plans/` — this repo's own design docs and implementation plans; plans are
+  rendered to HTML (`docs/index.html`) by `node docs/_src/build-plans.mjs`
+- `dump/` — scratch space, ignored by git
+- `scripts/check.mjs` — consistency check: skill frontmatter, this catalogue, rendered plans
+
+## Maintenance
+
+    node scripts/check.mjs             # frontmatter, catalogue, stale plan pages
+    node docs/_src/build-plans.mjs     # re-render plans after editing markdown
+    node --test "docs/_src/*.test.mjs"             # generator tests</code></pre>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret9s4" />
+                  <label class="step__label" for="repostructuret9s4">Run the check to see it pass</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>node scripts/check.mjs</code><br />
+  <b>Expect</b> <code>check: ok</code>, exit 0.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret9s5" />
+                  <label class="step__label" for="repostructuret9s5">Prove the check catches drift</label>
+                </div>
+                <div class="step__body">
+<p class="expect">
+  <b>Run</b> <code>mkdir -p .claude/skills/ghost; printf -- '---\nname: ghost\ndescription: Use when testing\n---\n' &gt; .claude/skills/ghost/SKILL.md; node scripts/check.mjs; rm -r .claude/skills/ghost</code><br />
+  <b>Expect</b> the middle command prints <code>README: skill "ghost" is not listed (.claude/skills/ghost/SKILL.md)</code> and exits 1.
+</p>
+                </div>
+              </li>
+
+              <li class="step">
+                <div class="step__top">
+                  <input type="checkbox" id="repostructuret9s6" />
+                  <label class="step__label" for="repostructuret9s6">Re-render the plan and commit</label>
+                </div>
+                <div class="step__body">
+<p>Ticked steps in this plan change its HTML, so regenerate before the final commit.</p>
+<p class="expect">
+  <b>Run</b> <code>node docs/_src/build-plans.mjs; node scripts/check.mjs; git status --porcelain</code><br />
+  <b>Expect</b> <code>check: ok</code>; status lists only <code>scripts/check.mjs</code>, <code>README.md</code>, and any regenerated <code>docs/</code> pages.
+</p>
+<pre><code>git add scripts/check.mjs README.md docs/
+git commit -m "feat: repo check script and README catalogue
+
+Co-Authored-By: Claude Opus 5 (1M context) &lt;noreply@anthropic.com&gt;"</code></pre>
+<p>---</p>
+                </div>
+              </li>
+            </ol>
+          </article>
+
+          <section class="done-when" id="done" data-spy>
+            <h2>Done when</h2>
+<ul class="plain">
+  <li><code>node --test "docs/_src/*.test.mjs"</code> passes: 14 tests, 0 failures.</li>
+  <li><code>node scripts/check.mjs</code> prints <code>check: ok</code>.</li>
+  <li><code>echo x &gt; dump/probe.txt; git status --porcelain</code> shows nothing for <code>dump/</code>.</li>
+  <li><code>docs/index.html</code> lists this plan, and <code>docs/plans/2026-09-20-repo-structure.html</code> renders all nine tasks.</li>
+  <li><code>wc -l &lt; .claude/CLAUDE.md</code> is under 60, and the file contains no list of skills.</li>
+  <li>A fresh Claude Code session opened in this repo lists <code>authoring</code> among its skills.</li>
+  <li><code>git status</code> is clean on <code>main</code>.</li>
+</ul>
+          </section>
+
+          <footer class="colophon">
+            <span>figma-mcp-skills</span>
+            <span>Plan · 2026-09-20</span>
+            <span>Source: <code>docs/plans/2026-09-20-repo-structure.md</code></span>
+            <span><a href="../index.html">← All plans</a></span>
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <script src="../assets/doc.js"></script>
+  </body>
+</html>
