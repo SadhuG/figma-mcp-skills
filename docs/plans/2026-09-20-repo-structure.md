@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- No `package.json`, no `node_modules`, no Prettier. The only runtime is `node` (v24 on this machine). Tests run with `node --test docs/_src/`.
+- No `package.json`, no `node_modules`, no Prettier. The only runtime is `node` (v24 on this machine). Tests run with `node --test "docs/_src/*.test.mjs"`.
 - Every file is LF. `.gitattributes` (`* text=auto eol=lf`) is already committed; do not add CRLF.
 - Nothing with a `SKILL.md` may live under `.claude/skills/` unless it is a real skill — the harness auto-discovers that folder. Templates live in `templates/`.
 - `.claude/CLAUDE.md` stays under 60 lines and contains no manual skill index.
@@ -259,7 +259,7 @@ test("renderIndex lists one card per plan with counts", () => {
 
 - [ ] **Step 2: Run the tests to see them fail**
 
-Run: `node --test docs/_src/`
+Run: `node --test "docs/_src/*.test.mjs"`
 Expected: FAIL — `Cannot find module '.../docs/_src/plan.mjs'`.
 
 - [ ] **Step 3: Copy the relay generator and strip what the library does not own**
@@ -596,7 +596,7 @@ ${cards}
 
 - [ ] **Step 7: Run the tests to see them pass**
 
-Run: `node --test docs/_src/`
+Run: `node --test "docs/_src/*.test.mjs"`
 Expected: PASS — 8 tests, 0 failures.
 
 - [ ] **Step 8: Commit**
@@ -743,7 +743,7 @@ test("CLI --check exits 1 on stale output and 0 when current", () => {
 
 - [ ] **Step 2: Run the tests to see them fail**
 
-Run: `node --test docs/_src/`
+Run: `node --test "docs/_src/*.test.mjs"`
 Expected: FAIL — `Cannot find module '.../docs/_src/build-plans.mjs'`; the 8 plan tests still pass.
 
 - [ ] **Step 3: Write the CLI**
@@ -828,7 +828,7 @@ if (isMain) {
 
 - [ ] **Step 4: Run the tests to see them pass**
 
-Run: `node --test docs/_src/`
+Run: `node --test "docs/_src/*.test.mjs"`
 Expected: PASS — 14 tests, 0 failures.
 
 - [ ] **Step 5: Commit**
@@ -1389,7 +1389,7 @@ skill is invoked. Specs are read only when a skill links to them.
 
     node scripts/check.mjs             # frontmatter, catalogue, stale plan pages
     node docs/_src/build-plans.mjs     # re-render plans after editing markdown
-    node --test docs/_src/             # generator tests
+    node --test "docs/_src/*.test.mjs"             # generator tests
 ```
 
 - [ ] **Step 4: Run the check to see it pass**
@@ -1420,7 +1420,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 
 ## Done when
 
-- `node --test docs/_src/` passes: 14 tests, 0 failures.
+- `node --test "docs/_src/*.test.mjs"` passes: 14 tests, 0 failures.
 - `node scripts/check.mjs` prints `check: ok`.
 - `echo x > dump/probe.txt; git status --porcelain` shows nothing for `dump/`.
 - `docs/index.html` lists this plan, and `docs/plans/2026-09-20-repo-structure.html` renders all nine tasks.
