@@ -11,10 +11,12 @@ skill is invoked. Specs are read only when a skill links to them.
 ## Skills
 
 - [`authoring`](.claude/skills/authoring/SKILL.md) — Use when adding or editing a skill, spec, template, or plan in this repo, or when a session instruction from the user should be persisted — decides skill vs spec, keeps README and rendered plans in step
+- [`building-icon-variant-sets`](.claude/skills/building-icon-variant-sets/SKILL.md) — Use when a Figma file holds icon components — outline symbols, optional solid twins, or sets with only a variant axis — that need to become one component set per icon with variant and weight properties for a per-icon code factory
 
 ## Specs
 
 - [`specs/figma-mcp-tools.md`](specs/figma-mcp-tools.md) — the shared Figma tool surface: which tools each server has, and the rules (node IDs, `fileKey`, Dev Mode, deletion, paths, atomicity) every call must respect
+- [`specs/icon-variant-sets.md`](specs/icon-variant-sets.md) — icon component-set contract: variant/weight props, weight → strokeWeight table, naming grammar, solid-capability classes, the position-based default-variant rule, and the inventory/build/extend/verify scripts
 
 ## Layout
 
