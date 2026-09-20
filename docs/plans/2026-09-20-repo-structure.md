@@ -38,7 +38,7 @@
 - Consumes: nothing.
 - Produces: `dump/` as the only sanctioned scratch location. Task 8's `CLAUDE.md` and Task 7's `authoring` skill refer to it by that path.
 
-- [ ] **Step 1: Write the root `.gitignore`**
+- [x] **Step 1: Write the root `.gitignore`**
 
 ```gitignore
 # OS / editor
@@ -56,7 +56,7 @@ node_modules/
 .claude/settings.local.json
 ```
 
-- [ ] **Step 2: Write `dump/.gitignore`**
+- [x] **Step 2: Write `dump/.gitignore`**
 
 ```gitignore
 # Scratch space. Everything here is throwaway; only this file is tracked.
@@ -64,12 +64,12 @@ node_modules/
 !.gitignore
 ```
 
-- [ ] **Step 3: Verify `dump/` swallows files**
+- [x] **Step 3: Verify `dump/` swallows files**
 
 Run: `echo scratch > dump/probe.txt; git status --porcelain`
 Expected: prints exactly two lines, `?? .gitignore` and `?? dump/` — no `dump/probe.txt`. Then `git add -n dump/` lists only `dump/.gitignore`.
 
-- [ ] **Step 4: Clean up and commit**
+- [x] **Step 4: Clean up and commit**
 
 ```bash
 rm dump/probe.txt
@@ -95,7 +95,7 @@ Port the relay's generator into a pure module with no registry and no relay bran
 - Consumes: nothing.
 - Produces: `parsePlan(md: string): Plan`, `deriveConfig(plan: Plan, filename: string): Config`, `renderHtml(plan: Plan, cfg: Config): string`, `renderIndex(entries: {plan: Plan, cfg: Config}[]): string`. `Plan` is the relay's shape (`title`, `meta`, `blockquote`, `constraints`, `tasks[]`, `doneWhen`) with `meta.Phase` added. `Config` is `{ md, docKey, slug, date, phase, eyebrow, description, spec: {href, label} | null }`. Task 3 imports all four from `./plan.mjs`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `docs/_src/plan.test.mjs`:
 
@@ -135,7 +135,7 @@ Intro paragraph.
 - Consumes: nothing.
 - Produces: \`parse(s)\`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 \`\`\`js
 assert.equal(parse("a"), "a");
@@ -157,15 +157,15 @@ Expected: FAIL with "parse is not defined"
 - Consumes: \`parse(s)\`.
 - Produces: \`render(p)\`.
 
-- [ ] **Step 1: Embed a file**
+- [x] **Step 1: Embed a file**
 
 \`\`\`markdown
 ### Task 99: not a real task
 ## Done when
-- [ ] **Step 7: not a real step**
+- [x] **Step 7: not a real step**
 \`\`\`
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 Run: \`git commit\`
 Expected: PASS
@@ -257,12 +257,12 @@ test("renderIndex lists one card per plan with counts", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to see them fail**
+- [x] **Step 2: Run the tests to see them fail**
 
 Run: `node --test "docs/_src/*.test.mjs"`
 Expected: FAIL — `Cannot find module '.../docs/_src/plan.mjs'`.
 
-- [ ] **Step 3: Copy the relay generator and strip what the library does not own**
+- [x] **Step 3: Copy the relay generator and strip what the library does not own**
 
 ```bash
 mkdir -p docs/_src
@@ -308,7 +308,7 @@ import { basename } from "node:path";
 
 5. Prefix `export` onto `const parsePlan`, `const renderHtml`, and `const blocks`, `const inline` (the index renderer and tests use them).
 
-- [ ] **Step 4: Make the parser fence-aware and read `Phase`**
+- [x] **Step 4: Make the parser fence-aware and read `Phase`**
 
 In `parsePlan`, the top-level `for` loop and the task-body collector both match structural lines without knowing whether they are inside a code fence. Apply these edits:
 
@@ -389,7 +389,7 @@ d. In the same branch, the step splitter `while (j < body.length) { const step =
 
 e. The `## Global Constraints` branch collects until `### Task`; it runs before any task so no fence handling is needed there.
 
-- [ ] **Step 5: Add `deriveConfig`**
+- [x] **Step 5: Add `deriveConfig`**
 
 Insert after `parsePlan` (before the `/* ---------- HTML emission` banner):
 
@@ -442,7 +442,7 @@ export const deriveConfig = (plan, filename) => {
 };
 ```
 
-- [ ] **Step 6: Replace `renderHtml` and add `renderIndex`**
+- [x] **Step 6: Replace `renderHtml` and add `renderIndex`**
 
 `renderTask` stays exactly as copied. The old `renderHtml` computed `const slug = cfg.docKey.replace(...)` itself; the new one passes `cfg.slug` straight through. Replace the whole `const renderHtml = (plan, cfg) => { ... };` with:
 
@@ -594,12 +594,12 @@ ${cards}
 };
 ```
 
-- [ ] **Step 7: Run the tests to see them pass**
+- [x] **Step 7: Run the tests to see them pass**
 
 Run: `node --test "docs/_src/*.test.mjs"`
 Expected: PASS — 8 tests, 0 failures.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add docs/_src/plan.mjs docs/_src/plan.test.mjs
@@ -624,7 +624,7 @@ The relay's script needed every plan registered by hand. This one finds `docs/pl
 - Consumes: `parsePlan`, `deriveConfig`, `renderHtml`, `renderIndex` from `./plan.mjs`.
 - Produces: `build({ plansDir, indexPath, check }): { entries, stale: string[], written: string[] }` and the CLI `node docs/_src/build-plans.mjs [--check]`, exit 1 when `--check` finds stale files. Task 9's `scripts/check.mjs` shells out to the CLI.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `docs/_src/build-plans.test.mjs`:
 
@@ -669,7 +669,7 @@ const PLAN = `# Tiny Implementation Plan
 - Consumes: nothing.
 - Produces: nothing.
 
-- [ ] **Step 1: Do it**
+- [x] **Step 1: Do it**
 
 Run: \`true\`
 Expected: PASS
@@ -741,12 +741,12 @@ test("CLI --check exits 1 on stale output and 0 when current", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to see them fail**
+- [x] **Step 2: Run the tests to see them fail**
 
 Run: `node --test "docs/_src/*.test.mjs"`
 Expected: FAIL — `Cannot find module '.../docs/_src/build-plans.mjs'`; the 8 plan tests still pass.
 
-- [ ] **Step 3: Write the CLI**
+- [x] **Step 3: Write the CLI**
 
 Create `docs/_src/build-plans.mjs`:
 
@@ -826,12 +826,12 @@ if (isMain) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to see them pass**
+- [x] **Step 4: Run the tests to see them pass**
 
 Run: `node --test "docs/_src/*.test.mjs"`
 Expected: PASS — 14 tests, 0 failures.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/_src/build-plans.mjs docs/_src/build-plans.test.mjs
@@ -858,7 +858,7 @@ Copy the stylesheet and page script, re-key the progress store so it does not sh
 - Consumes: the CLI from Task 3.
 - Produces: the rendered pages the spec calls for. Nothing later depends on their contents.
 
-- [ ] **Step 1: Copy the assets**
+- [x] **Step 1: Copy the assets**
 
 ```bash
 mkdir -p docs/assets
@@ -866,7 +866,7 @@ cp "C:/Users/sadhu/code/figma-design-relay/docs/superpowers/assets/doc.css" docs
 cp "C:/Users/sadhu/code/figma-design-relay/docs/superpowers/assets/doc.js" docs/assets/doc.js
 ```
 
-- [ ] **Step 2: Re-key the progress store and retitle the script**
+- [x] **Step 2: Re-key the progress store and retitle the script**
 
 In `docs/assets/doc.js` change the first comment line from `/* Figma Design Relay — document behaviours.` to `/* figma-mcp-skills — document behaviours.` and change
 
@@ -883,17 +883,17 @@ to
 Run: `grep -n "fmb-plan\|Figma Design Relay" docs/assets/doc.js docs/assets/doc.css`
 Expected: prints nothing.
 
-- [ ] **Step 3: Render this plan**
+- [x] **Step 3: Render this plan**
 
 Run: `node docs/_src/build-plans.mjs`
 Expected: prints `2026-09-20-repo-structure.md  (9 tasks, N steps)` and `wrote 2 file(s)`; `docs/plans/2026-09-20-repo-structure.html` and `docs/index.html` now exist.
 
-- [ ] **Step 4: Confirm the parse survived this plan's embedded markdown**
+- [x] **Step 4: Confirm the parse survived this plan's embedded markdown**
 
 Run: `grep -c '<article class="task"' docs/plans/2026-09-20-repo-structure.html; grep -o 'Task 0[0-9]</span>' docs/plans/2026-09-20-repo-structure.html | tail -1`
 Expected: `9` and `Task 09</span>` — every task rendered, none swallowed by a fenced `### Task` or `## Done when` inside a step.
 
-- [ ] **Step 5: Confirm `--check` is clean, then commit**
+- [x] **Step 5: Confirm `--check` is clean, then commit**
 
 Run: `node docs/_src/build-plans.mjs --check`
 Expected: `plans: up to date`, exit 0.
@@ -920,7 +920,7 @@ Facts every Figma skill needs, in one place, so skills link here instead of rest
 - Consumes: nothing.
 - Produces: the path `specs/figma-mcp-tools.md`, linked from Task 7's `authoring` skill, Task 8's `CLAUDE.md`, and Task 9's README.
 
-- [ ] **Step 1: Write the spec**
+- [x] **Step 1: Write the spec**
 
 ```markdown
 # Figma MCP tool surface
@@ -981,12 +981,12 @@ Escape hatch (relay only):
 - Serialized nodes omit fields that carry nothing — absence of `component`, `boundVariables`, or `styles` means the node has none, not that the lookup failed.
 ```
 
-- [ ] **Step 2: Verify it is a spec, not a skill**
+- [x] **Step 2: Verify it is a spec, not a skill**
 
 Run: `grep -nE "^[0-9]+\. |^## Steps" specs/figma-mcp-tools.md`
 Expected: prints nothing — no numbered procedure, no steps section.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add specs/figma-mcp-tools.md
@@ -1011,7 +1011,7 @@ Skeletons for the two formats that already exist. They live outside `.claude/ski
 - Consumes: nothing.
 - Produces: the two template paths, referenced by Task 7's `authoring` skill.
 
-- [ ] **Step 1: Write `templates/SKILL.md`**
+- [x] **Step 1: Write `templates/SKILL.md`**
 
 ```markdown
 ---
@@ -1043,7 +1043,7 @@ description: Use when <the situation that should trigger this skill> — <what i
 - <what to check before saying the task is done>
 ```
 
-- [ ] **Step 2: Write `templates/spec.md`**
+- [x] **Step 2: Write `templates/spec.md`**
 
 ```markdown
 # <Topic>
@@ -1057,12 +1057,12 @@ description: Use when <the situation that should trigger this skill> — <what i
 writing "then do X", it belongs in a skill.>
 ```
 
-- [ ] **Step 3: Confirm the harness will not discover the template**
+- [x] **Step 3: Confirm the harness will not discover the template**
 
 Run: `ls .claude/skills/ 2>/dev/null; find . -name SKILL.md -not -path './.git/*'`
 Expected: the `ls` shows nothing yet (Task 7 adds the first skill); `find` shows only `./templates/SKILL.md`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add templates/
@@ -1086,7 +1086,7 @@ The repo's maintenance procedure as a native skill: how to add or edit skills, s
 - Consumes: `templates/SKILL.md`, `templates/spec.md`, `docs/_src/build-plans.mjs`, `scripts/check.mjs` (Task 9).
 - Produces: the skill name `authoring`, referenced by `CLAUDE.md` and the README.
 
-- [ ] **Step 1: Write the skill**
+- [x] **Step 1: Write the skill**
 
 ```markdown
 ---
@@ -1168,12 +1168,12 @@ Add `templates/<format>.md` when a format has appeared three times. Never put a 
 - `node scripts/check.mjs` prints `check: ok`.
 ```
 
-- [ ] **Step 2: Confirm discovery-shape and length**
+- [x] **Step 2: Confirm discovery-shape and length**
 
 Run: `head -4 .claude/skills/authoring/SKILL.md; wc -l < .claude/skills/authoring/SKILL.md`
 Expected: the first line is `---`, the second starts `name: authoring`, the third starts `description: Use when`; the line count is under 100.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .claude/skills/authoring/SKILL.md
@@ -1197,7 +1197,7 @@ The only always-on file. Short, and every rule it carries is one the agent needs
 - Consumes: the paths from Tasks 1, 5, 7, and 9.
 - Produces: nothing later depends on it.
 
-- [ ] **Step 1: Write the file**
+- [x] **Step 1: Write the file**
 
 ```markdown
 # figma-mcp-skills
@@ -1241,12 +1241,12 @@ and procedure: the `authoring` skill.
 - Everything is LF (`.gitattributes` enforces it).
 ```
 
-- [ ] **Step 2: Check the length budget**
+- [x] **Step 2: Check the length budget**
 
 Run: `wc -l < .claude/CLAUDE.md`
 Expected: a number under 60.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .claude/CLAUDE.md
@@ -1271,7 +1271,7 @@ Make the spec's verification list executable, then write the README so it passes
 - Consumes: `node docs/_src/build-plans.mjs --check` (Task 3).
 - Produces: `node scripts/check.mjs`, exit 0 with `check: ok` when the repo is consistent. `CLAUDE.md` and the `authoring` skill already refer to it.
 
-- [ ] **Step 1: Write the check script**
+- [x] **Step 1: Write the check script**
 
 Create `scripts/check.mjs`:
 
@@ -1348,12 +1348,12 @@ if (problems.length) {
 console.log("check: ok");
 ```
 
-- [ ] **Step 2: Run it to see it fail on the missing README**
+- [x] **Step 2: Run it to see it fail on the missing README**
 
 Run: `node scripts/check.mjs`
 Expected: exit 1 with an `ENOENT` error for `README.md` (the script has nothing to catalogue against yet).
 
-- [ ] **Step 3: Write the README**
+- [x] **Step 3: Write the README**
 
 ```markdown
 # figma-mcp-skills
@@ -1392,17 +1392,17 @@ skill is invoked. Specs are read only when a skill links to them.
     node --test "docs/_src/*.test.mjs"             # generator tests
 ```
 
-- [ ] **Step 4: Run the check to see it pass**
+- [x] **Step 4: Run the check to see it pass**
 
 Run: `node scripts/check.mjs`
 Expected: `check: ok`, exit 0.
 
-- [ ] **Step 5: Prove the check catches drift**
+- [x] **Step 5: Prove the check catches drift**
 
 Run: `mkdir -p .claude/skills/ghost; printf -- '---\nname: ghost\ndescription: Use when testing\n---\n' > .claude/skills/ghost/SKILL.md; node scripts/check.mjs; rm -r .claude/skills/ghost`
 Expected: the middle command prints `README: skill "ghost" is not listed (.claude/skills/ghost/SKILL.md)` and exits 1.
 
-- [ ] **Step 6: Re-render the plan and commit**
+- [x] **Step 6: Re-render the plan and commit**
 
 Ticked steps in this plan change its HTML, so regenerate before the final commit.
 
