@@ -11,3 +11,6 @@ node_modules/
 
 # Claude Code local-only settings
 .claude/settings.local.json
+
+# Scratch space, never tracked
+dump/
